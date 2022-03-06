@@ -1,0 +1,44 @@
+# API ENDPOINTS
+
+## BROWSE ENDPOINTS 
+# home/browse/:type
+http://localhost:8080/api/v1/home/browse/all
+http://localhost:8080/api/v1/home/browse/charts
+http://localhost:8080/api/v1/home/browse/new_releases
+http://localhost:8080/api/v1/home/browse/genres
+
+# /lyrics/browse?id=BROWSEID&params=PARAMS
+http://localhost:8080/api/v1/lyrics/browse?id=MPLYt_qY9BpWoVCeO
+
+# /genre/browse?id=BROWSEID&params=PARAMS
+http://localhost:8080/api/v1/genre/browse?id=FEmusic_moods_and_genres_category&params=ggMPOg1uX0pmQ0s2V0JRclZs
+
+# browse?id=BROWSEID&params=PARAMS
+http://localhost:8080/api/v1/browse?id=MPREb_MUMGxJfU0BL
+# playlist (list only)
+http://localhost:8080/api/v1/browse?id=VLOLAK5uy_k1_lQmABg1gYWmwPxDXCnqMQjNEvPSes0&params=ggMCCAI%3D
+http://localhost:8080/api/v1/browse?id=OLAK5uy_nFkN24ehaDlKwj0EPXk06oPUUNuucrUv0
+# USERS / ARTISTS
+http://localhost:8080/api/v1/browse?id=UCFecy2va8-RZBNvIzKbwSDg
+http://localhost:8080/api/v1/browse?id=UCovRNq6CYnSKsj5NTVLnPCQ
+# porter
+http://localhost:8080/api/v1/browse?id=UCUt2uP6O_UBJp4aBx5KjQjA
+
+
+## SEARCH ENDPOINTS
+# search
+# retuns [TOP RESULTS, SONGS, ARTISTS, ALBUMS, PLAYLISTS, VIDEOS]
+http://localhost:8080/api/v1/search?query=hello friend 
+# suppoted params = [SONGS, ARTISTS, ALBUMS, PLAYLISTS, VIDEOS]
+http://localhost:8080/api/v1/search?query=hello friend&params=SONGS 
+# search next results
+http://localhost:8080/api/v1/search_next?ctoken=ErMDEgxoZWxsbyBmcmllbmQaogNFZy1LQVF3SUFSQUFHQUFnQUNnQU1BQklGR29LRUFRUUJSQURFQW9RQ1lJQkN6aFdOVmwzYjJKSGExb3dnZ0VMU0ZGSFJFVlhiV3RoT0d1Q0FRdG9UVkpDYkZkbU0xTjRkNElCQzFaemVWbGxWMVpaUkdSTmdnRUxlbmxETkd0c05HaDNRbU9DQVFzeFRGbG5YM05OWlU5Sk5JSUJDMHRLT1d4UFZIWk5TMFZaZ2dFTExUbExNMk5mTjJaNU5sbUNBUXRuVDBkdlZrMURNamhOYjRJQkMyWlBXbGhQU0RkbFMzWnZnZ0VMVEZCclRHMUpUVXhrZWxHQ0FRdFlkM0JvV0ROTUxWaDVOSUlCQzJkMGQwaGpibkV4V21aamdnRUxaVlZuVFVaT2RHOVhORGlDQVF0TVREaDZOR1UzZUMxeVk0SUJDM1p1TVZwVFFWSm1jVEpuZ2dFTFRHdFhUbTlGYlhFMk1qU0NBUXR3V0ZOcU5VWkRXV05zYTRJQkN6Rk1WRkJTZFdJMmRrdEZnZ0VMTW5jMk1EaEZUWFE1YlZVJTNEGPHq0C4%253D&continuation=ErMDEgxoZWxsbyBmcmllbmQaogNFZy1LQVF3SUFSQUFHQUFnQUNnQU1BQklGR29LRUFRUUJSQURFQW9RQ1lJQkN6aFdOVmwzYjJKSGExb3dnZ0VMU0ZGSFJFVlhiV3RoT0d1Q0FRdG9UVkpDYkZkbU0xTjRkNElCQzFaemVWbGxWMVpaUkdSTmdnRUxlbmxETkd0c05HaDNRbU9DQVFzeFRGbG5YM05OWlU5Sk5JSUJDMHRLT1d4UFZIWk5TMFZaZ2dFTExUbExNMk5mTjJaNU5sbUNBUXRuVDBkdlZrMURNamhOYjRJQkMyWlBXbGhQU0RkbFMzWnZnZ0VMVEZCclRHMUpUVXhrZWxHQ0FRdFlkM0JvV0ROTUxWaDVOSUlCQzJkMGQwaGpibkV4V21aamdnRUxaVlZuVFVaT2RHOVhORGlDQVF0TVREaDZOR1UzZUMxeVk0SUJDM1p1TVZwVFFWSm1jVEpuZ2dFTFRHdFhUbTlGYlhFMk1qU0NBUXR3V0ZOcU5VWkRXV05zYTRJQkN6Rk1WRkJTZFdJMmRrdEZnZ0VMTW5jMk1EaEZUWFE1YlZVJTNEGPHq0C4%253D&type=next&itct=CAsQybcCIhMI3cnjwoK_8wIVTxO3AB0arA69
+# suppoted params = [SONGS, ARTISTS, ALBUMS, PLAYLISTS, VIDEOS]
+http://localhost:8080/api/v1/search_suggestions?query=hello friend&params=ALBUMS
+
+## AUDIO / SONG ENDPOINTS
+# song audio
+http://localhost:8080/api/v1/audio?id=si81bIoZRJQ
+# next songs
+http://localhost:8080/api/v1/audio/next?id=si81bIoZRJQ
+http://localhost:8080/api/v1/audio/next?playlistId=RDAMVMikgHRuU46l4&params=wAEB8gECeAE%3D
