@@ -16,7 +16,11 @@ const songRoutes = require("./routes/song");
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://soundrex.netlify.app"],
+    origin: [
+      "http://localhost:3000",
+      "https://soundrex.netlify.app",
+      "https://master--soundrex.netlify.app",
+    ],
     credentials: true,
   })
 );
