@@ -95,7 +95,7 @@ const browseHome = async (type, country) => {
 
     // error handling
     if (!result) {
-      next(create_return_error("No data found", 404));
+      create_return_error("No data found", 404);
     }
 
     let final;
@@ -109,7 +109,7 @@ const browseHome = async (type, country) => {
       }
       // parsing new releases
       const list = Parser.singleColumnBrowseResultsRenderer(
-        singleColumnBrowseResultsRenderer
+        singleColumnBrowseResultsRenderer,
       );
       // error handling
       if (!list || (list && list.length === 0)) {
@@ -130,7 +130,7 @@ const browseHome = async (type, country) => {
       }
       // parsing new releases
       const list = Parser.singleColumnBrowseResultsRenderer(
-        singleColumnBrowseResultsRenderer
+        singleColumnBrowseResultsRenderer,
       );
       // error handling
       if (!list || (list && list.length === 0)) {
@@ -139,7 +139,7 @@ const browseHome = async (type, country) => {
 
       // musicShelfRenderer contains <form/> data :ignore musicShelfRenderer
       const musicCarouselShelfRenderers = list.filter((i) =>
-        i.hasOwnProperty("musicCarouselShelfRenderer")
+        i.hasOwnProperty("musicCarouselShelfRenderer"),
       );
       // error handling
       if (musicCarouselShelfRenderers.length <= 0) {
@@ -148,7 +148,7 @@ const browseHome = async (type, country) => {
 
       // final = list;
       const finalList = musicCarouselShelfRenderers.map((i) =>
-        Parser.musicCarouselShelfRenderer(i.musicCarouselShelfRenderer)
+        Parser.musicCarouselShelfRenderer(i.musicCarouselShelfRenderer),
       );
 
       if (finalList?.length > 0) {
@@ -168,7 +168,7 @@ const browseHome = async (type, country) => {
       }
       // parsing new releases
       const list = Parser.singleColumnBrowseResultsRenderer(
-        singleColumnBrowseResultsRenderer
+        singleColumnBrowseResultsRenderer,
       );
       // error handling
       if (!list || (list && list.length === 0)) {
@@ -178,7 +178,7 @@ const browseHome = async (type, country) => {
       const gridRenderers = list;
 
       const finalList = gridRenderers.map((i) =>
-        Parser.gridRenderer(i.gridRenderer, type)
+        Parser.gridRenderer(i.gridRenderer, type),
       );
 
       if (finalList?.length > 0) {
@@ -201,7 +201,7 @@ const browseHome = async (type, country) => {
       const listSingleColumnBrowseResults =
         Parser.singleColumnBrowseResultsRenderer(
           singleColumnBrowseResultsRenderer,
-          true
+          true,
         );
       // error handling
       if (
@@ -210,7 +210,7 @@ const browseHome = async (type, country) => {
       ) {
         throw create_return_error(
           "SingleColumnBrowseResultsRenderer is empty",
-          404
+          404,
         );
       }
 
@@ -244,6 +244,7 @@ const browseHome = async (type, country) => {
 
     return final;
   } catch (error) {
+    console.error(error);
     throw error;
   }
 };
@@ -271,6 +272,7 @@ exports.browseHomeAll = async (req, res, next) => {
 
     return res.json({ home: final });
   } catch (error) {
+    console.error("error", error);
     next(error);
   }
 };
@@ -317,11 +319,11 @@ exports.browseGenre = async (req, res, next) => {
 
     if (result?.header?.musicHeaderRenderer)
       final.header = Parser.musicHeaderRenderer(
-        result.header.musicHeaderRenderer
+        result.header.musicHeaderRenderer,
       );
 
     const Renderers = Parser.singleColumnBrowseResultsRenderer(
-      result?.contents.singleColumnBrowseResultsRenderer
+      result?.contents.singleColumnBrowseResultsRenderer,
     );
 
     let list = [];
@@ -332,7 +334,7 @@ exports.browseGenre = async (req, res, next) => {
         }
         if (i?.musicCarouselShelfRenderer) {
           list.push(
-            Parser.musicCarouselShelfRenderer(i.musicCarouselShelfRenderer)
+            Parser.musicCarouselShelfRenderer(i.musicCarouselShelfRenderer),
           );
         }
       }
@@ -377,7 +379,7 @@ exports.browseLyrics = async (req, res, next) => {
     // * Lyrics available
     if (result?.contents?.sectionListRenderer) {
       const list = Parser.sectionListRenderer(
-        result?.contents.sectionListRenderer
+        result?.contents.sectionListRenderer,
       );
       if (!list || (list && result?.length <= 0)) {
         next(create_return_error("No lyrics found", 404));
@@ -390,8 +392,8 @@ exports.browseLyrics = async (req, res, next) => {
           final.list.push(
             Parser.musicDescriptionShelfRenderer(
               e.musicDescriptionShelfRenderer,
-              true
-            )
+              true,
+            ),
           );
       });
     }
@@ -424,7 +426,7 @@ exports.browseId = async (req, res, next) => {
   const { id, params } = req.query;
 
   let filteredId = id.startsWith(
-    defaults.playlist.startWith[0].substring(2, 4).trim()
+    defaults.playlist.startWith[0].substring(2, 4).trim(),
   )
     ? defaults.playlist.startWith[0].substring(0, 2) + id
     : id;
@@ -478,13 +480,13 @@ exports.browseId = async (req, res, next) => {
 
     if (result?.contents?.singleColumnBrowseResultsRenderer) {
       filteredList = Parser.singleColumnBrowseResultsRenderer(
-        result?.contents.singleColumnBrowseResultsRenderer
+        result?.contents.singleColumnBrowseResultsRenderer,
       );
     }
 
     if (result?.contents?.sectionListRenderer) {
       filteredList = Parser.sectionListRenderer(
-        result?.contents.sectionListRenderer
+        result?.contents.sectionListRenderer,
       );
     }
 
@@ -504,7 +506,7 @@ exports.browseId = async (req, res, next) => {
       // filtering header
       if (header && header?.musicDetailHeaderRenderer) {
         final.header = Parser.musicDetailHeaderRenderer(
-          header.musicDetailHeaderRenderer
+          header.musicDetailHeaderRenderer,
         );
       }
       final.contents = filterAlbums(filteredList);
@@ -518,7 +520,7 @@ exports.browseId = async (req, res, next) => {
       // filtering header
       if (header && header?.musicDetailHeaderRenderer) {
         final.header = Parser.musicDetailHeaderRenderer(
-          header.musicDetailHeaderRenderer
+          header.musicDetailHeaderRenderer,
         );
       }
       final.contents = filterPlaylists(filteredList);
@@ -531,14 +533,14 @@ exports.browseId = async (req, res, next) => {
         // have public music content
         if (header?.musicImmersiveHeaderRenderer) {
           final.header = Parser.musicImmersiveHeaderRenderer(
-            header?.musicImmersiveHeaderRenderer
+            header?.musicImmersiveHeaderRenderer,
           );
         }
 
         // does not have any public music content
         if (header?.musicVisualHeaderRenderer) {
           final.header = Parser.musicVisualHeaderRenderer(
-            header?.musicVisualHeaderRenderer
+            header?.musicVisualHeaderRenderer,
           );
         }
       }
@@ -579,8 +581,8 @@ const filterAlbums = (list) => {
         if (c?.musicResponsiveListItemRenderer) {
           final.push(
             Parser.musicResponsiveListItemRenderer(
-              c.musicResponsiveListItemRenderer
-            )
+              c.musicResponsiveListItemRenderer,
+            ),
           );
         }
       }
@@ -595,7 +597,7 @@ const filterPlaylists = (list) => {
   for (let i of list) {
     if (i?.musicPlaylistShelfRenderer) {
       final.push(
-        Parser.musicPlaylistShelfRenderer(i.musicPlaylistShelfRenderer, true)
+        Parser.musicPlaylistShelfRenderer(i.musicPlaylistShelfRenderer, true),
       );
     }
   }
@@ -616,9 +618,11 @@ const filterArtists = (list) => {
         supportedMusicArtistsProfileShelfs[shelfName].hasArgs
           ? supportedMusicArtistsProfileShelfs[shelfName].function(
               i[shelfName],
-              ...supportedMusicArtistsProfileShelfs[shelfName].args
+              ...supportedMusicArtistsProfileShelfs[shelfName].args,
             )
-          : supportedMusicArtistsProfileShelfs[shelfName].function(i[shelfName])
+          : supportedMusicArtistsProfileShelfs[shelfName].function(
+              i[shelfName],
+            ),
       );
     }
   }
@@ -639,9 +643,11 @@ const filterRelatedMusic = (list) => {
         supportedMusicArtistsProfileShelfs[shelfName].hasArgs
           ? supportedMusicArtistsProfileShelfs[shelfName].function(
               i[shelfName],
-              ...supportedMusicArtistsProfileShelfs[shelfName].args
+              ...supportedMusicArtistsProfileShelfs[shelfName].args,
             )
-          : supportedMusicArtistsProfileShelfs[shelfName].function(i[shelfName])
+          : supportedMusicArtistsProfileShelfs[shelfName].function(
+              i[shelfName],
+            ),
       );
     }
   }
