@@ -9,9 +9,9 @@ const isAuth = require("../middlewares/is-auth");
 
 // ? browse routes
 router.get("/home/browse/all", browseController.browseHomeAll);
-router.get("/home/browse/:type", browseController.browseHome);
+router.get("/home/browse/:type", isAuth, browseController.browseHome);
 router.get("/lyrics/browse", isAuth, browseController.browseLyrics);
-router.get("/genre/browse", isAuth, browseController.browseGenre);
+router.get("/genre/browse", browseController.browseGenre);
 router.get(
   "/browse",
   // isAuth,
