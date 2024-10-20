@@ -490,6 +490,19 @@ exports.browseId = async (req, res, next) => {
       );
     }
 
+    if (
+      result?.contents?.twoColumnBrowseResultsRenderer?.secondaryContents
+        ?.sectionListRenderer
+    ) {
+      filteredList = Parser.sectionListRenderer(
+        result.contents?.twoColumnBrowseResultsRenderer.secondaryContents
+          .sectionListRenderer,
+      );
+    }
+
+    console.info(result.contents);
+    //return res.json(result.contents);
+
     // error handling
     if (!filteredList || (filteredList && filteredList?.length <= 0)) {
       next(create_return_error("List is empty", 404));
