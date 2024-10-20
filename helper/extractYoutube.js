@@ -1,4 +1,4 @@
-const ytdl = require("ytdl-core");
+const ytdl = require("@distube/ytdl-core");
 const youtubedl = require("youtube-dl-exec");
 const axios = require("axios");
 
@@ -99,7 +99,6 @@ exports.extractYoutube = async (id, dataType) => {
 };
 
 exports.extractFromYoutubeRaw = async (videoId) => {
-
   const apiKey = "AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc";
   //const apiKey = process.env.YOUTUBE_API_KEY;
   if (!apiKey) {
@@ -194,7 +193,7 @@ exports.extractFromYoutubeRaw = async (videoId) => {
     .toLowerCase();
   const filename = `${sanitizedTitle}-${info.videoDetails.videoId}.${ext}`;
   return selectedFormat;
-}
+};
 
 exports.extractFromInvidious = async (id, dataType) => {
   const invidiousServer = "https://invidious.jing.rocks";

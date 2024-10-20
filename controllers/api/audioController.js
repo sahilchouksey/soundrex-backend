@@ -31,6 +31,11 @@ const asyncAsync = require("async");
 
 const audioServers = [
   {
+    function: extractFromYtdlCore,
+    name: "extractFromYtdlCore",
+    isActive: true,
+  },
+  {
     function: extractFromYoutubeRaw,
     name: "extractFromYoutubeRaw",
     isActive: true,
@@ -38,11 +43,6 @@ const audioServers = [
   {
     function: extractFromInvidious,
     name: "extractFromInvidious",
-    isActive: true,
-  },
-  {
-    function: extractFromYtdlCore,
-    name: "extractFromYtdlCore",
     isActive: true,
   },
   {

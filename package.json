@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@distube/ytdl-core": "^4.14.4",
     "async": "^3.2.3",
     "axios": "^0.22.0",
     "bcrypt": "^5.0.1",
@@ -29,7 +30,6 @@
     "nodemon": "^2.0.22",
     "redis": "^3.1.2",
     "youtube-dl-exec": "^2.0.1",
-    "yt-gets": "^2.1.0",
-    "ytdl-core": "^4.11.5"
+    "yt-gets": "^2.1.0"
   }
 }
