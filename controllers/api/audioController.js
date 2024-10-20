@@ -16,11 +16,17 @@ const proxy = httpProxy.createProxyServer({
   secure: false,
   followRedirects: true,
 });
+const https = require("https");
+const fs = require("fs");
 
 const {
   create_return_error,
   objectIsEmpty,
 } = require("../../helper/functions");
+const YtMusic = require("../../lib/youtubeMusicApi");
+const Parser = require("../../lib/parser.api");
+const { queueAddEndpoint } = require("../../lib/parser.api");
+
 const asyncAsync = require("async");
 
 const audioServers = [
