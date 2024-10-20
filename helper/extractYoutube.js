@@ -98,9 +98,13 @@ exports.extractYoutube = async (id, dataType) => {
   }
 };
 
+const { HttpsProxyAgent } = require("https-proxy-agent");
+//const fetch = require("node-fetch"); // Ensure you have node-fetch installed
+// const fetch = require("cross-fetch"); // Alternatively, you can use cross-fetch
+
 exports.extractFromYoutubeRaw = async (videoId) => {
   const apiKey = "AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc";
-  //const apiKey = process.env.YOUTUBE_API_KEY;
+  // const apiKey = process.env.YOUTUBE_API_KEY;
   if (!apiKey) {
     throw new Error("YouTube API key is not set in environment variables.");
   }
@@ -137,10 +141,16 @@ exports.extractFromYoutubeRaw = async (videoId) => {
 
   const url = `https://www.youtube.com/youtubei/v1/player?key=${apiKey}&prettyPrint=false`;
 
+  // **Proxy Configuration Starts Here**
+  const proxyUrl = "http://122.200.19.103:80"; // Replace with your proxy URL
+  const agent = new HttpsProxyAgent(proxyUrl);
+  // **Proxy Configuration Ends Here**
+
   const res = await fetch(url, {
     method: "POST",
     body: JSON.stringify(body),
     headers,
+    agent, // Add the proxy agent to the fetch options
   });
 
   if (!res.ok) {
@@ -194,36 +204,6 @@ exports.extractFromYoutubeRaw = async (videoId) => {
   const filename = `${sanitizedTitle}-${info.videoDetails.videoId}.${ext}`;
   return selectedFormat;
 };
-
-exports.extractFromInvidious = async (id, dataType) => {
-  const invidiousServer = "https://invidious.jing.rocks";
-  try {
-    const { data: info } = await axios.get(
-      `${invidiousServer}/api/v1/videos/${id}?fields=adaptiveFormats,title,description`,
-    );
-    let audioFormats = filterFormats(info.adaptiveFormats, "audioonly");
-
-    if (!audioFormats || audioFormats.length === 0) {
-      throw new Error("No audio formats found.");
-    }
-
-    if (dataType === "audio") {
-      const format = highestBitrate(audioFormats);
-      return format;
-    } else if (dataType === "info") {
-      return {
-        title: info.title,
-        description: info.description,
-        formats: audioFormats,
-      };
-    }
-  } catch (error) {
-    console.error("Error in extractFromInvidious:", error);
-    throw error;
-  }
-};
-
-const { HttpsProxyAgent } = require("https-proxy-agent");
 
 exports.extractFromYtdlCore = async (id, dataType) => {
   try {
