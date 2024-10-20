@@ -123,13 +123,39 @@ exports.getAudio = async (req, res, next) => {
           audio?.mimeType || audio?.type || 'audio/webm; codecs="opus"';
 
         // Set headers for the response
+        /*
+                    *cross-origin-resource-policy:
+cross-origin
+
+date:
+Sun, 20 Oct 2024 17:11:44 GMT
+expires:
+Sun, 20 Oct 2024 17:11:44 GMT
+last-modified:
+Sat, 05 Oct 2024 10:55:43 GMT
+server:
+gvs 1.0
+timing-allow-origin:
+https://music.youtube.com
+vary:
+Origin
+x-content-type-options:
+nosniff
+*/
+
         res.setHeader(
           "Content-disposition",
           `inline; filename=${id}.${container}`,
         );
         res.setHeader("Content-type", mimeType);
+        res.setHeader("cross-origin-resource-policy", "cross-origin");
+        res.setHeader("timing-allow-origin", "https://music.youtube.com");
+        res.setHeader("vary", "Origin");
+        res.setHeader("x-content-type-options", "nosniff");
+        res.setHeader("server", "gvs 1.0");
 
         // Set headers for the proxy request
+
         const proxyReq = {
           headers: {
             "User-Agent":

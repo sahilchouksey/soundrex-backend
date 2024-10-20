@@ -232,6 +232,32 @@ exports.extractFromYtdlCore = async (id, dataType) => {
   }
 };
 
+exports.extractFromInvidious = async (id, dataType) => {
+  const invidiousServer = "https://invidious.jing.rocks";
+  try {
+    const { data: info } = await axios.get(
+      `${invidiousServer}/api/v1/videos/${id}?fields=adaptiveFormats,title,description`,
+    );
+    let audioFormats = filterFormats(info.adaptiveFormats, "audioonly");
+    if (!audioFormats || audioFormats.length === 0) {
+      throw new Error("No audio formats found.");
+    }
+    if (dataType === "audio") {
+      const format = highestBitrate(audioFormats);
+      return format;
+    } else if (dataType === "info") {
+      return {
+        title: info.title,
+        description: info.description,
+        formats: audioFormats,
+      };
+    }
+  } catch (error) {
+    console.error("Error in extractFromInvidious:", error);
+    throw error;
+  }
+};
+
 // https://beatbump.ml/api/player.json?videoId=Ei8UnOPJX7w
 
 exports.extractFromBeatbump = async (id, dataType) => {
