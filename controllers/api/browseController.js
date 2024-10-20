@@ -566,6 +566,24 @@ exports.browseId = async (req, res, next) => {
       final.contents = filterRelatedMusic(filteredList);
     }
 
+    if (!final?.header) {
+      final.header = {};
+      if (result?.contents?.twoColumnBrowseResultsRenderer?.tabs) {
+        for (const tab of result.contents.twoColumnBrowseResultsRenderer.tabs) {
+          const tabs = Parser.tabRenderer(tab?.tabRenderer, true);
+
+          for (const _tab of tabs) {
+            console.info("TAB", _tab.musicResponsiveHeaderRenderer);
+            if (_tab?.musicResponsiveHeaderRenderer) {
+              final.header = Parser.musicResponsiveHeaderRenderer(
+                _tab.musicResponsiveHeaderRenderer,
+              );
+            }
+          }
+        }
+      }
+    }
+
     // return res.json(final);
 
     // error handling
