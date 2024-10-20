@@ -208,31 +208,34 @@ exports.extractFromYoutubeRaw = async (videoId) => {
 exports.extractFromPipeDaAPI = async (id) => {
   try {
     // https://pipedapi.reallyaweso.me/streams/fRh_vgS2dFE
-    const res = await fetch(`https://pipedapi.reallyaweso.me/streams/${id}`);
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(
-        `Failed to fetch video info: ${res.status} ${res.statusText} - ${errorText}`,
-      );
-    }
+    //const res = await fetch(`https://pipedapi.reallyaweso.me/streams/${id}`);
+    //    if (!res.ok) {
+    //      const errorText = await res.text();
+    //      throw new Error(
+    //        `Failed to fetch video info: ${res.status} ${res.statusText} - ${errorText}`,
+    //      );
+    //    }
+    //
+    //    const json = await res.json();
+    //
+    //    // Getting best audio format
+    //
+    //    const audioFormats = json?.audioStreams.filter(
+    //      (format) => format.mimeType && format.mimeType.startsWith("audio"),
+    //    );
+    //
+    //    if (audioFormats.length === 0) {
+    //      throw new Error("No audio formats available.");
+    //    }
+    //
+    //    // Sort audio formats by bitrate in descending order and select the best one
+    //    audioFormats.sort((a, b) => (b.audioBitrate || 0) - (a.audioBitrate || 0));
 
-    const json = await res.json();
+    //const selectedFormat = audioFormats[0];
 
-    // Getting best audio format
-
-    const audioFormats = json?.audioStreams.filter(
-      (format) => format.mimeType && format.mimeType.startsWith("audio"),
-    );
-
-    if (audioFormats.length === 0) {
-      throw new Error("No audio formats available.");
-    }
-
-    // Sort audio formats by bitrate in descending order and select the best one
-    audioFormats.sort((a, b) => (b.audioBitrate || 0) - (a.audioBitrate || 0));
-
-    const selectedFormat = audioFormats[0];
-
+    const selectedFormat = {
+      url: `https://pipedapi.reallyaweso.me/streams/${id}`,
+    };
     return selectedFormat;
   } catch (error) {
     console.log(error);
@@ -282,23 +285,27 @@ exports.extractFromYtdlCore = async (id, dataType) => {
 exports.extractFromInvidious = async (id, dataType) => {
   const invidiousServer = "https://invidious.jing.rocks";
   try {
-    const { data: info } = await axios.get(
-      `${invidiousServer}/api/v1/videos/${id}?fields=adaptiveFormats,title,description`,
-    );
-    let audioFormats = filterFormats(info.adaptiveFormats, "audioonly");
-    if (!audioFormats || audioFormats.length === 0) {
-      throw new Error("No audio formats found.");
-    }
-    if (dataType === "audio") {
-      const format = highestBitrate(audioFormats);
-      return format;
-    } else if (dataType === "info") {
-      return {
-        title: info.title,
-        description: info.description,
-        formats: audioFormats,
-      };
-    }
+    //    const { data: info } = await axios.get(
+    //      `${invidiousServer}/api/v1/videos/${id}?fields=adaptiveFormats,title,description`,
+    //    );
+    //    let audioFormats = filterFormats(info.adaptiveFormats, "audioonly");
+    //    if (!audioFormats || audioFormats.length === 0) {
+    //      throw new Error("No audio formats found.");
+    //    }
+    //    if (dataType === "audio") {
+    //      const format = highestBitrate(audioFormats);
+    //
+    //      return format;
+    //    } else if (dataType === "info") {
+    //      return {
+    //        title: info.title,
+    //        description: info.description,
+    //        formats: audioFormats,
+    //      };
+    //    }
+    return {
+      url: `${invidiousServer}/api/v1/videos/${id}?fields=adaptiveFormats,title,description`,
+    };
   } catch (error) {
     console.error("Error in extractFromInvidious:", error);
     throw error;
