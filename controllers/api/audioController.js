@@ -7,6 +7,7 @@ const {
   extractFromAlltube250,
   extractFromAlltube251,
   extractFromYoutubeRaw,
+  extractFromPipeDaAPI,
 } = require("../../helper/extractYoutube");
 const memoryClient = require("../../lib/cache/memory");
 const httpProxy = require("http-proxy");
@@ -30,6 +31,11 @@ const { queueAddEndpoint } = require("../../lib/parser.api");
 const asyncAsync = require("async");
 
 const audioServers = [
+  {
+    function: extractFromPipeDaAPI,
+    name: "extractFromPipeDaAPI",
+    isActive: true,
+  },
   {
     function: extractFromYtdlCore,
     name: "extractFromYtdlCore",

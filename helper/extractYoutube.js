@@ -205,6 +205,41 @@ exports.extractFromYoutubeRaw = async (videoId) => {
   return selectedFormat;
 };
 
+exports.extractFromPipeDaAPI = async (id) => {
+  try {
+    // https://pipedapi.reallyaweso.me/streams/fRh_vgS2dFE
+    const res = await fetch(`https://pipedapi.reallyaweso.me/streams/${id}`);
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(
+        `Failed to fetch video info: ${res.status} ${res.statusText} - ${errorText}`,
+      );
+    }
+
+    const json = await res.json();
+
+    // Getting best audio format
+
+    const audioFormats = json?.audioStreams.filter(
+      (format) => format.mimeType && format.mimeType.startsWith("audio"),
+    );
+
+    if (audioFormats.length === 0) {
+      throw new Error("No audio formats available.");
+    }
+
+    // Sort audio formats by bitrate in descending order and select the best one
+    audioFormats.sort((a, b) => (b.audioBitrate || 0) - (a.audioBitrate || 0));
+
+    const selectedFormat = audioFormats[0];
+
+    return selectedFormat;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
 exports.extractFromYtdlCore = async (id, dataType) => {
   try {
     const proxyUrl = "http://122.200.19.103:80";
