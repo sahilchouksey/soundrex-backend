@@ -223,9 +223,16 @@ exports.extractFromInvidious = async (id, dataType) => {
   }
 };
 
+const { HttpsProxyAgent } = require("https-proxy-agent");
+
 exports.extractFromYtdlCore = async (id, dataType) => {
   try {
-    let info = await ytdl.getInfo(BASE_URL(id));
+    const proxyUrl = "http://122.200.19.103:80";
+    const agent = new HttpsProxyAgent(proxyUrl);
+
+    let info = await ytdl.getInfo(BASE_URL(id), {
+      requestOptions: agent,
+    });
     let audioFormats = ytdl.filterFormats(info.formats, "audioonly");
 
     if (!info || !audioFormats || (audioFormats && audioFormats.length === 0))
