@@ -46,13 +46,13 @@ app.use((error, req, res, next) => {
 
 deleteCacheCron();
 
-//mongoose
-// .connect(process.env.MONGODB_SERVER)
-//.then(() => {
-app.listen(PORT, () => {
-  console.log("starting server");
-  // client.flushall();
-  console.log("Server is listing to port: " + PORT);
-});
-//})
-//.catch((err) => console.log(err));
+mongoose
+  .connect(process.env.MONGODB_SERVER)
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log("starting server");
+      // client.flushall();
+      console.log("Server is listing to port: " + PORT);
+    });
+  })
+  .catch((err) => console.log(err));
