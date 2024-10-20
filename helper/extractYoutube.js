@@ -1,49 +1,8 @@
 const ytdl = require("ytdl-core");
-
-const cookie = require("./cookie");
-
 const youtubedl = require("youtube-dl-exec");
-const { default: axios } = require("axios");
+const axios = require("axios");
 
-/*
-const COOKIE =
-  "Authorization=SAPISIDHASH 1639394668_04f8f3e6953162ead582c1f932f4cb2eaa91785d; ";
-module.exports = async function extractYoutube(id, dataType) {
-  try {
-    const info = await ytdl.getInfo(id, {
-      // requestOptions: {
-      //   headers: {
-      //     Authorization:
-      //       "SAPISIDHASH 1639394668_04f8f3e6953162ead582c1f932f4cb2eaa91785d",
-      //     cookie:
-      //       "VISITOR_INFO1_LIVE=S8b_3wLid6A; PREF=tz=Asia.Kolkata&f6=40000000&volume=90; SID=Egij9ROoJLluCCXBI0OWS_YgrE-ar_zWaCc3bKr5IDgM2T4o8kabgAZyrDFFHl3rkaJhaQ.; __Secure-1PSID=Egij9ROoJLluCCXBI0OWS_YgrE-ar_zWaCc3bKr5IDgM2T4okosfUfw2DW1jtYOIMEr5hw.; __Secure-3PSID=Egij9ROoJLluCCXBI0OWS_YgrE-ar_zWaCc3bKr5IDgM2T4opZjO0EpWxevbp3k4MOb22A.; HSID=Asmr6-yonTB2LLGlj; SSID=Afwn7tt6RmYvrsKGf; APISID=XxVkQ9cFq6lTAt7Q/A5cmmf-o7ba7GOq7_; SAPISID=fSF_WDWxUkVsXcQ0/AGXf3MC3RmF5qh1TZ; __Secure-1PAPISID=fSF_WDWxUkVsXcQ0/AGXf3MC3RmF5q…6xpAqU27g%22%2C%22watchEndpointSupportedOnesieConfig%22%3A%7B%22html5PlaybackOnesieConfig%22%3A%7B%22commonConfig%22%3A%7B%22url%22%3A%22https%3A%2F%2Fr1---sn-5hnekn7z.googlevideo.com%2Finitplayback%3Fsource%3Dyoutube%26orc%3D1%26oeis%3D1%26c%3DWEB%26oad%3D3200%26ovd%3D3200%26oaad%3D11000%26oavd%3D11000%26ocs%3D700%26oewis%3D1%26oputc%3D1%26ofpcc%3D1%26msp%3D1%26odeak%3D1%26odepv%3D1%26osfc%3D1%26id%3D026eb1a40a94dbb8%26ip%3D89.38.97.132%26initcwndbps%3D472500%26mt%3D1639374771%26oweuc%3D%22%7D%7D%7D%7D%7D",
-      //     "x-youtube-identity-token":
-      //       "QUFFLUhqbEdGTU5IWkVIRC1zd0VmLURhMmNjMzZtLUd0Z3w=",
-      //     // Optional. If not given, ytdl-core will try to find it.
-      //     // You can find this by going to a video's watch page, viewing the source,
-      //     // and searching for "ID_TOKEN".
-      //     // 'x-youtube-identity-token': 1324,
-      //   },
-      // },
-    });
-
-    console.log(info);
-    if (dataType == "audio") {
-      let audioFormats = ytdl.filterFormats(info.formats, "audioonly");
-
-      audioFormats = audioFormats.sort(
-        (a, b) => b.audioBitrate - a.audioBitrate
-      );
-      console.log(audioFormats);
-      return audioFormats[0];
-    } else if (dataType == "info") {
-      return info.videoDetails;
-    }
-  } catch (error) {
-    console.log(error);
-  }
-};
-*/
+const BASE_URL = (vid) => `https://www.youtube.com/watch?v=${vid}`;
 
 const audioFormats = [
   // 258, MP4
@@ -58,101 +17,209 @@ const audioFormats = [
 const typeStartText = "audio";
 
 const formatsSet = new Set(audioFormats);
-const filterFormats = (formats, type, filterWithText, ...args) => {
+//const filterFormats = (formats, type, filterWithText, ...args) => {
+//  if (type === "audioonly") {
+//    // return formats.filter((format) => format?.ext?.toLowerCase() === "webm");
+//
+//    if (filterWithText) {
+//      return formats.filter((format) => {
+//        const mimeType = format.type || format.mimeType;
+//
+//        return mimeType?.toLowerCase()?.includes(typeStartText);
+//      });
+//    }
+//
+//    return formats.filter((format) =>
+//      formatsSet.has(Number(format?.format_id)),
+//    );
+//  } else if (type === "findById") {
+//    return formats.filter(
+//      (format) =>
+//        formatsSet.has(Number(format?.format_id)) &&
+//        String(format.id) === String(args.id),
+//    );
+//  }
+//};
+//
+//const highestBitrate = (formats) => {
+//  let highestBitrateFormat;
+//  let prevBitrate = 0;
+//  for (let format of formats) {
+//    if (prevBitrate < Number(format.bitrate)) {
+//      highestBitrateFormat = format;
+//    }
+//
+//    prevBitrate = Number(format.bitrate);
+//  }
+//
+//  return highestBitrateFormat;
+//};
+const filterFormats = (formats, type) => {
   if (type === "audioonly") {
-    // return formats.filter((format) => format?.ext?.toLowerCase() === "webm");
-
-    if (filterWithText) {
-      return formats.filter((format) => {
-        const mimeType = format.type || format.mimeType;
-
-        return mimeType?.toLowerCase()?.includes(typeStartText);
-      });
-    }
-
-    return formats.filter((format) =>
-      formatsSet.has(Number(format?.format_id))
-    );
-  } else if (type === "findById") {
-    return formats.filter(
-      (format) =>
-        formatsSet.has(Number(format?.format_id)) &&
-        String(format.id) === String(args.id)
-    );
+    return formats.filter((format) => {
+      const mimeType = format.mimeType || format.type;
+      return mimeType && mimeType.toLowerCase().includes("audio");
+    });
   }
+  return formats;
 };
 
 const highestBitrate = (formats) => {
-  let highestBitrateFormat;
-  let prevBitrate = 0;
-  for (let format of formats) {
-    if (prevBitrate < Number(format.bitrate)) {
-      highestBitrateFormat = format;
-    }
-
-    prevBitrate = Number(format.bitrate);
-  }
-
-  return highestBitrateFormat;
+  return formats.reduce((highest, format) => {
+    return format.bitrate > highest.bitrate ? format : highest;
+  });
 };
 
 const invidiousServer = "https://invidious.osi.kr"; // https://redirect.invidious.io/api/v1/videos/aqz-KE-bpKQ?fields=videoId,title,description&pretty=1
-
-// const BASE = "https://music.youtube.com";
-const BASE = "https://youtube.com";
-
-const BASE_URL = (vid) => `${BASE}/watch?v=${vid}`;
 
 //   `https://music.youtube.com/watch?v=${vid}&list=RDAMVM${vid}`;
 
 exports.extractYoutube = async (id, dataType) => {
   try {
     const info = await youtubedl(BASE_URL(id), {
-      // dumpSingleJson: true,
+      dumpSingleJson: true,
       extractAudio: true,
-
-      audioQuality: 0,
-      getUrl: true,
-      rmCacheDir: true,
-
-      // referer: `https://music.youtube.com/watch?v=${id}`,
-
-      // noWarnings: true,
-      // noCallHome: true,
-      // noCheckCertificate: true,
-      // preferFreeFormats: true,
-      // youtubeSkipDashManifest: true,
-      // audioFormat: "mp3",
-      ///verbose: true,
-      // noPlaylist: true,
-      // playlistStart: 1,
-      addHeader: `Cache-Control: no-cache; `,
-      // cookies: cookie?.cookie || cookie.default,
+      audioFormat: "best",
+      noCheckCertificate: true,
+      preferFreeFormats: true,
+      addHeader: ["referer:youtube.com", "user-agent:Mozilla/5.0"],
     });
 
-    if (dataType == "audio") {
-      /*
+    if (dataType === "audio") {
       let audioFormats = filterFormats(info.formats, "audioonly");
-      // let audioFormats = filterFormats(info.entries, "findById", id);
-
-      audioFormats = audioFormats.sort((a, b) => b.abr - a.abr);
-      console.log(audioFormats);
-
-      // 140 reg supported
-      const hasYtmusicAudioFormat = audioFormats.find(
-        (f) => Number(f.format_id) === 140
-      );
-
-      const format = hasYtmusicAudioFormat || audioFormats[0];
-*/
-      const format = info;
-
+      const format = highestBitrate(audioFormats);
       return format;
-    } else if (dataType == "info") {
-      return info.videoDetails;
+    } else if (dataType === "info") {
+      return info;
     }
   } catch (error) {
-    console.log(error);
+    console.error("Error in extractYoutube:", error);
+    throw error;
+  }
+};
+
+exports.extractFromYoutubeRaw = async (videoId) => {
+
+  const apiKey = "AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc";
+  //const apiKey = process.env.YOUTUBE_API_KEY;
+  if (!apiKey) {
+    throw new Error("YouTube API key is not set in environment variables.");
+  }
+
+  const headers = {
+    "X-YouTube-Client-Name": "5",
+    "X-YouTube-Client-Version": "19.09.3",
+    Origin: "https://www.youtube.com",
+    "User-Agent":
+      "com.google.ios.youtube/19.09.3 (iPhone14,3; U; CPU iOS 15_6 like Mac OS X)",
+    "Content-Type": "application/json",
+  };
+
+  const body = {
+    context: {
+      client: {
+        clientName: "IOS",
+        clientVersion: "19.09.3",
+        deviceModel: "iPhone14,3",
+        userAgent:
+          "com.google.ios.youtube/19.09.3 (iPhone14,3; U; CPU iOS 15_6 like Mac OS X)",
+        hl: "en",
+        timeZone: "UTC",
+        utcOffsetMinutes: 0,
+      },
+    },
+    videoId,
+    playbackContext: {
+      contentPlaybackContext: { html5Preference: "HTML5_PREF_WANTS" },
+    },
+    contentCheckOk: true,
+    racyCheckOk: true,
+  };
+
+  const url = `https://www.youtube.com/youtubei/v1/player?key=${apiKey}&prettyPrint=false`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers,
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(
+      `Failed to fetch video info: ${res.status} ${res.statusText} - ${errorText}`,
+    );
+  }
+
+  const json = await res.json();
+
+  // Fetch video info
+  const info = json;
+
+  // Check playability
+  if (info.playabilityStatus.status !== "OK") {
+    throw new Error(info.playabilityStatus.reason || "Video is not playable.");
+  }
+
+  // Get adaptive formats
+  const formats = info.streamingData.adaptiveFormats;
+  if (!formats || formats.length === 0) {
+    throw new Error("No adaptive formats available for this video.");
+  }
+
+  // Select the best audio format (highest bitrate)
+  const audioFormats = formats.filter(
+    (format) => format.mimeType && format.mimeType.startsWith("audio"),
+  );
+  if (audioFormats.length === 0) {
+    throw new Error("No audio formats available.");
+  }
+
+  // Sort audio formats by bitrate in descending order and select the best one
+  audioFormats.sort((a, b) => (b.audioBitrate || 0) - (a.audioBitrate || 0));
+  const selectedFormat = audioFormats[0];
+
+  if (!selectedFormat.url) {
+    throw new Error("Selected format does not have a URL.");
+  }
+  console.log(selectedFormat.url);
+
+  // Determine file extension from mimeType
+  const extMatch = selectedFormat.mimeType.match(/audio\/(\w+)/);
+  const ext = extMatch ? extMatch[1] : "webm";
+
+  // Create a safe filename
+  const sanitizedTitle = info.videoDetails.title
+    .replace(/[^a-z0-9]/gi, "_")
+    .toLowerCase();
+  const filename = `${sanitizedTitle}-${info.videoDetails.videoId}.${ext}`;
+  return selectedFormat;
+}
+
+exports.extractFromInvidious = async (id, dataType) => {
+  const invidiousServer = "https://invidious.jing.rocks";
+  try {
+    const { data: info } = await axios.get(
+      `${invidiousServer}/api/v1/videos/${id}?fields=adaptiveFormats,title,description`,
+    );
+    let audioFormats = filterFormats(info.adaptiveFormats, "audioonly");
+
+    if (!audioFormats || audioFormats.length === 0) {
+      throw new Error("No audio formats found.");
+    }
+
+    if (dataType === "audio") {
+      const format = highestBitrate(audioFormats);
+      return format;
+    } else if (dataType === "info") {
+      return {
+        title: info.title,
+        description: info.description,
+        formats: audioFormats,
+      };
+    }
+  } catch (error) {
+    console.error("Error in extractFromInvidious:", error);
     throw error;
   }
 };
@@ -218,35 +285,10 @@ exports.extractFromBeatbump = async (id, dataType) => {
   }
 };
 
-//  https://invidious.osi.kr/api/v1/videos/Ei8UnOPJX7w?fields=adaptiveFormats
-exports.extractFromInvidious = async (id, dataType) => {
-  try {
-    let { data: info } = await axios.get(
-      `${invidiousServer}/api/v1/videos/${id}?fields=adaptiveFormats`
-    );
-    let audioFormats = filterFormats(info.adaptiveFormats, "audioonly", true);
-
-    if (!info || !audioFormats || (audioFormats && audioFormats.length === 0))
-      throw new Error("No data found.");
-
-    if (dataType == "audio") {
-      const format = highestBitrate(audioFormats);
-
-      return format;
-    }
-    //  else if (dataType == "info") {
-    //   return info.videoDetails;
-    // }
-  } catch (error) {
-    console.log(error);
-    throw error;
-  }
-};
-
 exports.extractFromAlltube249 = async (id, dataType) => {
   try {
     let { data: audio } = await axios.get(
-      `https://alltubedownload.net/download?url=https://www.youtube.com/watch?v=${id}&format=249`
+      `https://alltubedownload.net/download?url=https://www.youtube.com/watch?v=${id}&format=249`,
     );
     if (!audio) throw new Error("No data found.");
 
@@ -267,7 +309,7 @@ exports.extractFromAlltube249 = async (id, dataType) => {
 exports.extractFromAlltube250 = async (id, dataType) => {
   try {
     let { data: audio } = await axios.get(
-      `https://alltubedownload.net/download?url=https://www.youtube.com/watch?v=${id}&format=250`
+      `https://alltubedownload.net/download?url=https://www.youtube.com/watch?v=${id}&format=250`,
     );
     if (!audio) throw new Error("No data found.");
 
@@ -288,7 +330,7 @@ exports.extractFromAlltube250 = async (id, dataType) => {
 exports.extractFromAlltube251 = async (id, dataType) => {
   try {
     let { data: audio } = await axios.get(
-      `https://alltubedownload.net/download?url=https://www.youtube.com/watch?v=${id}&format=251`
+      `https://alltubedownload.net/download?url=https://www.youtube.com/watch?v=${id}&format=251`,
     );
     if (!audio) throw new Error("No data found.");
 

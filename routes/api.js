@@ -34,5 +34,6 @@ router.get("/audio-download", audioController.audioDownload);
 router.get("/audio/next", isAuth, audioController.getNextSongs);
 router.post("/audio/get_queue", audioController.getQueue);
 router.get("/change-server", audioController.changeAudioServer);
+router.get("/server-stats", audioController.getServerStatus);
 
 module.exports = router;
