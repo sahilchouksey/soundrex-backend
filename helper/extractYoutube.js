@@ -212,6 +212,18 @@ exports.extractFromYtdlCore = async (id, dataType) => {
 
     let info = await ytdl.getInfo(BASE_URL(id), {
       requestOptions: agent,
+      headers: {
+        "User-Agent":
+          " Mozilla/5.0 (X11; Linux x86_64; rv:96.0) Gecko/20100101 Firefox/96.0",
+        Accept:
+          " text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": " en-US,en;q=0.5",
+        Origin: "https://www.youtube.com",
+        Referer: "https://www.youtube.com",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
+      },
     });
     let audioFormats = ytdl.filterFormats(info.formats, "audioonly");
 
