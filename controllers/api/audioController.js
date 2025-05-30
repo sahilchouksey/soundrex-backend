@@ -317,37 +317,103 @@ exports.audioDownload = async (req, res, next) => {
   // Download functionality would go here
   // Currently commented out in original
 };
-
 exports.getNextSongs = async (req, res, next) => {
-  const { id, playlistId, params, index, clickTracking } = req.query;
+  const { id, params, playlistId, idx, continuation } = req.query;
 
   try {
-      const key = `${id}${playlistId}${params}${clickTracking}${index}`;
-      const cache = await memoryClient.get(`/next`, key);
+    const cache = await memoryClient.get(
+      `/nextSongs`,
+      id + params + playlistId + idx + continuation,
+    );
 
-      let data;
-      if (cache) {
-          console.log("Cache Hit " + key);
-          data = cache;
-        } else {
-          console.log("Cache Miss " + key);
-        data = await YtMusic.next_songs(id, params, playlistId, index, clickTracking);
-
-          if (data && !objectIsEmpty(data)) {
-            await memoryClient.set(`/next`, key, data, 1);
-          }
-        }
-
-      if (!data || objectIsEmpty(data)) {
-        return next(create_return_error("No data found", 404));
-      }
-
-      return res.status(200).json(Parser.nextSong(data));
-    } catch (error) {
-      console.error("Error in getNextSongs:", error);
-      next(error);
+    if (cache) {
+      return res.json(cache);
     }
+
+    const result = await YtMusic.next_songs(
+      id,
+      params,
+      playlistId,
+      idx,
+      continuation,
+    );
+
+    // if (continuation) {
+    //   return res.json(result);
+    // }
+    // error handling
+    if (
+      !continuation &&
+      (!result ||
+        (result &&
+          objectIsEmpty(
+            result?.contents?.singleColumnMusicWatchNextResultsRenderer,
+          )))
+    ) {
+      next(create_return_error("No result found", 404));
+    }
+
+    let songData = Parser.singleColumnMusicWatchNextResultsRenderer(
+      result.contents.singleColumnMusicWatchNextResultsRenderer,
+    );
+
+    songData.currentVideoEndpoint =
+      result?.currentVideoEndpoint &&
+      Parser.findNavigationEndpoint({
+        navigationEndpoint: result.currentVideoEndpoint,
+      });
+
+    // error handling
+    if (
+      !continuation &&
+      (!songData || (songData && objectIsEmpty(songData?.next_songs?.list)))
+    ) {
+      next(create_return_error("No result found", 404));
+    }
+
+    // * development only
+    let status = 200;
+    if (
+      !continuation &&
+      ((songData && songData.next_songs.list?.list?.length <= 0) ||
+        !songData.next_songs.list?.title)
+    ) {
+      // return res.json(result);
+      // List is empty
+      songData.hack = true;
+      songData.message = "Up next list is empty.";
+      // status = 204;
+    }
+
+    if (
+      (continuation && !result?.continuationContents) ||
+      (result?.continuationContents &&
+        objectIsEmpty(result?.continuationContents))
+    ) {
+      next(create_return_error("No result found", 404));
+    }
+
+    if (continuation) {
+      songData.next_songs.list = Parser.continuationContents(
+        result.continuationContents,
+        false,
+        true,
+      );
+    }
+
+    await memoryClient.set(
+      `/nextSongs`,
+      id + params + playlistId + idx + continuation,
+      songData,
+      4,
+    ); // 2 hour
+
+    return res.status(status).json(songData);
+  } catch (error) {
+    next(error);
+  }
 };
+
 
 exports.getQueue = async (req, res, next) => {
   const { videoIds, playlistId } = req.body;
