@@ -18,12 +18,87 @@ const songRoutes = require("./routes/song");
 
 app.use(
   cors({
-    origin: "*",
+    origin: function (origin, callback) {
+      console.log('🌐 CORS Origin Request:', origin || 'No origin (likely same-origin or server-to-server)');
+
+      // Allow requests with no origin (like mobile apps, curl requests, or same-origin)
+      if (!origin) return callback(null, true);
+
+      // For development, allow all origins
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('✅ Development mode: Allowing origin:', origin);
+        return callback(null, true);
+      }
+
+      // In production, you should specify allowed origins
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:3001',
+        'https://localhost:3000',
+        'https://localhost:3001',
+        'https://soundrex.netlify.app',
+        'http://soundrex.netlify.app',
+        // Add your production domains here
+      ];
+
+      if (allowedOrigins.includes(origin)) {
+        console.log('✅ Allowed origin:', origin);
+        return callback(null, true);
+      }
+
+      // For now, allow all origins (you should restrict this in production)
+      console.log('⚠️  Unknown origin allowed:', origin);
+      return callback(null, true);
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
+    allowedHeaders: [
+      'Origin',
+      'X-Requested-With',
+      'Content-Type',
+      'Accept',
+      'Authorization',
+      'Cache-Control',
+      'X-Access-Token',
+      'X-Key',
+      'If-Modified-Since',
+      'Access-Control-Allow-Origin',
+      'Access-Control-Allow-Headers',
+      'Access-Control-Allow-Methods',
+      'X-Forwarded-For',
+      'X-Real-IP'
+    ],
+    exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar', 'Content-Type'],
+    optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
+    preflightContinue: false // Pass control to the next handler
   }),
 );
 
 // app.set("Access-Control-Allow-Origin", "http://localhost:3000");
+
+// Handle preflight requests explicitly
+app.options('*', cors());
+
+// Additional CORS debugging middleware
+app.use((req, res, next) => {
+  console.log(`📡 ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'}`);
+
+  // Add additional CORS headers as fallback
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH,HEAD');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, X-Access-Token, X-Key, If-Modified-Since');
+
+  if (req.method === 'OPTIONS') {
+    console.log('🔄 Handling preflight OPTIONS request');
+    res.status(200).end();
+    return;
+  }
+
+  next();
+});
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
