@@ -35,5 +35,12 @@ router.get("/audio/next", isAuth, audioController.getNextSongs);
 router.post("/audio/get_queue", audioController.getQueue);
 router.get("/change-server", audioController.changeAudioServer);
 router.get("/server-stats", audioController.getServerStatus);
+router.get("/piped/health-check", audioController.pipedHealthCheck);
+
+// Proxy management routes
+// router.get("/proxy/stats", audioController.getProxyStats);
+// router.get("/proxy/refresh", audioController.refreshProxies);
+// router.get("/proxy/test", audioController.testProxyExtraction);
+// router.get("/proxy/status", audioController.getProxyServiceStatus);
 
 module.exports = router;

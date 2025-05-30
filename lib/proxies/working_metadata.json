@@ -1,0 +1,10 @@
+{
+  "lastTested": "2025-05-30T15:57:44.971Z",
+  "workingCounts": {
+    "http": 0,
+    "https": 3,
+    "socks4": 0,
+    "socks5": 0
+  },
+  "testMode": "quick"
+}

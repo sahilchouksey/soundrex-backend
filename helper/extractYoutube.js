@@ -1,6 +1,14 @@
 const ytdl = require("@distube/ytdl-core");
 const youtubedl = require("youtube-dl-exec");
 const axios = require("axios");
+const { PipedInstanceManager } = require("../lib/pipedInstances");
+const ProxyYtdlExtractor = require("../lib/proxyYtdlExtractor");
+
+// Initialize Piped instance manager
+const pipedManager = new PipedInstanceManager();
+
+// Initialize Proxy YTDL Extractor
+const proxyYtdlExtractor = new ProxyYtdlExtractor();
 
 const BASE_URL = (vid) => `https://www.youtube.com/watch?v=${vid}`;
 
@@ -207,38 +215,17 @@ exports.extractFromYoutubeRaw = async (videoId) => {
 
 exports.extractFromPipeDaAPI = async (id) => {
   try {
-    // https://pipedapi.reallyaweso.me/streams/fRh_vgS2dFE
-    //const res = await fetch(`https://pipedapi.reallyaweso.me/streams/${id}`);
-    //    if (!res.ok) {
-    //      const errorText = await res.text();
-    //      throw new Error(
-    //        `Failed to fetch video info: ${res.status} ${res.statusText} - ${errorText}`,
-    //      );
-    //    }
-    //
-    //    const json = await res.json();
-    //
-    //    // Getting best audio format
-    //
-    //    const audioFormats = json?.audioStreams.filter(
-    //      (format) => format.mimeType && format.mimeType.startsWith("audio"),
-    //    );
-    //
-    //    if (audioFormats.length === 0) {
-    //      throw new Error("No audio formats available.");
-    //    }
-    //
-    //    // Sort audio formats by bitrate in descending order and select the best one
-    //    audioFormats.sort((a, b) => (b.audioBitrate || 0) - (a.audioBitrate || 0));
+    console.log(`🎵 Attempting Piped extraction for video: ${id}`);
+    const startTime = Date.now();
 
-    //const selectedFormat = audioFormats[0];
+    const result = await pipedManager.extractAudioFromPiped(id);
 
-    const selectedFormat = {
-      url: `https://pipedapi.reallyaweso.me/streams/${id}`,
-    };
-    return selectedFormat;
+    const extractionTime = Date.now() - startTime;
+    console.log(`✅ Piped extraction successful in ${extractionTime}ms for ${id} from ${result.instance}`);
+
+    return result;
   } catch (error) {
-    console.log(error);
+    console.error(`❌ Piped extraction failed for ${id}:`, error.message);
     throw error;
   }
 };
@@ -412,4 +399,85 @@ exports.extractFromAlltube251 = async (id, dataType) => {
     console.log(error);
     throw error;
   }
+};
+
+// Proxy-enabled YTDL extraction
+exports.extractFromProxyYtdl = async (id, dataType) => {
+  try {
+    console.log(`🔄 Attempting proxy YTDL extraction for video: ${id}`);
+    const startTime = Date.now();
+
+    if (!proxyYtdlExtractor.isInitialized) {
+      await proxyYtdlExtractor.initialize();
+    }
+
+    const result = await proxyYtdlExtractor.extractAudioWithProxy(id);
+
+    const extractionTime = Date.now() - startTime;
+    console.log(`✅ Proxy YTDL extraction successful in ${extractionTime}ms for ${id}`);
+
+    if (dataType === "audio") {
+      return {
+        url: result.url,
+        mimeType: result.mimeType,
+        bitrate: result.bitrate,
+        contentLength: result.contentLength,
+        container: result.container,
+        quality: result.quality,
+        source: result.source,
+        proxy: result.proxy,
+        videoDetails: result.videoDetails
+      };
+    }
+
+    return result;
+  } catch (error) {
+    console.error(`❌ Proxy YTDL extraction failed for ${id}:`, error.message);
+    throw error;
+  }
+};
+
+// Get proxy extractor instance for external access
+exports.getProxyYtdlExtractor = () => proxyYtdlExtractor;
+
+// Get proxy extractor statistics
+exports.getProxyYtdlStats = () => {
+  return proxyYtdlExtractor.getStats();
+};
+
+// Refresh proxy list
+exports.refreshProxyList = async () => {
+  return await proxyYtdlExtractor.refreshProxies();
+};
+
+// Test proxy extraction
+exports.testProxyExtraction = async (testVideoId) => {
+  return await proxyYtdlExtractor.testExtraction(testVideoId);
+};
+
+// Export Piped manager for external access
+exports.getPipedManager = () => pipedManager;
+
+// Health check function for Piped instances
+exports.pipedHealthCheck = async () => {
+  return await pipedManager.healthCheck();
+};
+
+// Reset all Piped instances
+exports.resetPipedInstances = () => {
+  pipedManager.resetAllInstances();
+};
+
+// Get Piped instances status
+exports.getPipedInstancesStatus = () => {
+  return {
+    total: pipedManager.instances.length,
+    active: pipedManager.getActiveInstances().length,
+    instances: pipedManager.instances.map((instance) => ({
+      host: instance.host,
+      isActive: instance.isActive,
+      failureCount: instance.failureCount,
+      lastUsed: instance.lastUsed,
+    })),
+  };
 };

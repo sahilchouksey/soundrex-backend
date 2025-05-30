@@ -8,6 +8,15 @@ const {
   extractFromAlltube251,
   extractFromYoutubeRaw,
   extractFromPipeDaAPI,
+  extractFromProxyYtdl,
+  getPipedManager,
+  pipedHealthCheck,
+  resetPipedInstances,
+  getPipedInstancesStatus,
+  getProxyYtdlExtractor,
+  getProxyYtdlStats,
+  refreshProxyList,
+  testProxyExtraction,
 } = require("../../helper/extractYoutube");
 const memoryClient = require("../../lib/cache/memory");
 const httpProxy = require("http-proxy");
@@ -31,6 +40,11 @@ const { queueAddEndpoint } = require("../../lib/parser.api");
 const asyncAsync = require("async");
 
 const audioServers = [
+  {
+    function: extractFromProxyYtdl,
+    name: "extractFromProxyYtdl",
+    isActive: true,
+  },
   {
     function: extractFromPipeDaAPI,
     name: "extractFromPipeDaAPI",
@@ -223,28 +237,55 @@ exports.changeAudioServer = async (req, res, next) => {
 
 exports.getServerStatus = async (req, res, next) => {
   try {
-    const testId = "dQw4w9WgXcQ"; // Use a reliable video ID for testing
+    const pipedStatus = getPipedInstancesStatus();
 
-    const serverStatuses = await Promise.all(
-      audioServers.map(async (server) => {
-        try {
-          await server.function(testId, "audio");
-          return { name: server.name, isActive: true };
-        } catch (error) {
-          console.error(`Error testing ${server.name}:`, error);
-          return { name: server.name, isActive: false };
-        }
-      }),
-    );
+    const serverStatus = {
+      audioServers: audioServers.map((server, index) => ({
+        name: server.name,
+        isActive: server.isActive,
+        isCurrent: index === currentServerIndex,
+        index: index
+      })),
+      pipedInstances: pipedStatus,
+      currentServerIndex,
+      totalServers: audioServers.length
+    };
 
-    // Update the main audioServers array with the new statuses
-    serverStatuses.forEach((status, index) => {
-      audioServers[index].isActive = status.isActive;
+    return res.json(serverStatus);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Add Piped health check endpoint
+exports.pipedHealthCheck = async (req, res, next) => {
+  try {
+    await pipedHealthCheck();
+    const status = getPipedInstancesStatus();
+    return res.json({
+      message: "Health check completed",
+      ...status
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Add Piped reset endpoint
+exports.resetPipedInstances = async (req, res, next) => {
+  try {
+    const { key } = req.query;
+
+    if (key !== process.env.CHANGE_COOKIE_KEY) {
+      throw create_return_error("Unauthorized", 401);
+    }
+
+    resetPipedInstances();
+    const status = getPipedInstancesStatus();
 
     return res.json({
-      currentServer: audioServers[currentServerIndex].name,
-      servers: serverStatuses,
+      message: "Piped instances reset successfully",
+      ...status
     });
   } catch (error) {
     next(error);
@@ -520,30 +561,195 @@ exports.getQueue = async (req, res, next) => {
   }
 };
 
-exports.changeAudioServer = async (req, res, next) => {
-  let { s, key } = req.query;
-
+// Enhanced Piped instance management endpoints
+exports.getPipedInstancesDetailed = async (req, res, next) => {
   try {
-    if (key !== process.env.CHANGE_COOKIE_KEY) {
-      throw create_return_error("Fuck Off!");
+    const pipedManager = getPipedManager();
+    const instances = pipedManager.instances.map(instance => ({
+      host: instance.host,
+      isActive: instance.isActive,
+      failureCount: instance.failureCount,
+      maxFailures: instance.maxFailures,
+      lastUsed: instance.lastUsed,
+      lastTestTime: instance.lastTestTime,
+      consecutiveSuccesses: instance.consecutiveSuccesses,
+      healthScore: instance.getHealthScore()
+    }));
+
+    const activeInstances = pipedManager.getActiveInstances();
+
+    return res.json({
+      total: instances.length,
+      active: activeInstances.length,
+      inactive: instances.length - activeInstances.length,
+      instances: instances.sort((a, b) => b.healthScore - a.healthScore), // Sort by health score
+      averageHealthScore: instances.reduce((sum, inst) => sum + inst.healthScore, 0) / instances.length
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Force use of specific Piped instance (for testing)
+exports.testSpecificPipedInstance = async (req, res, next) => {
+  try {
+    const { host, videoId } = req.query;
+
+    if (!host || !videoId) {
+      throw create_return_error("host and videoId parameters are required", 400);
     }
 
-    const server = audioServers.find((ser) => ser.name === s);
-    if (!server) {
-      throw create_return_error("Server not found!");
+    const pipedManager = getPipedManager();
+    const instance = pipedManager.instances.find(inst => inst.host === host);
+
+    if (!instance) {
+      throw create_return_error("Piped instance not found", 404);
     }
 
-    const totalServers = audioServers.length;
+    // Test the specific instance
+    const startTime = Date.now();
+    const audio = await pipedManager.extractAudioFromPiped(videoId, 0);
+    const responseTime = Date.now() - startTime;
 
-    for (let i = 0; i < totalServers; i++) {
-      if (audioServers[i].name === s) {
-        audioServers[i].isSelected = true;
-      } else {
-        audioServers[i].isSelected = false;
+    return res.json({
+      success: true,
+      instance: host,
+      responseTime: `${responseTime}ms`,
+      audioData: {
+        bitrate: audio.bitrate,
+        mimeType: audio.mimeType,
+        container: audio.container,
+        hasUrl: !!audio.url
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const pipedHealthService = require("../../lib/pipedHealthService");
+
+// Health service management endpoints
+exports.startPipedHealthService = async (req, res, next) => {
+  try {
+    pipedHealthService.start();
+    const status = pipedHealthService.getStatus();
+
+    return res.json({
+      message: "Piped health monitoring service started",
+      ...status
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.stopPipedHealthService = async (req, res, next) => {
+  try {
+    pipedHealthService.stop();
+    const status = pipedHealthService.getStatus();
+
+    return res.json({
+      message: "Piped health monitoring service stopped",
+      ...status
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getPipedHealthServiceStatus = async (req, res, next) => {
+  try {
+    const status = pipedHealthService.getStatus();
+    const pipedStatus = getPipedInstancesStatus();
+
+    return res.json({
+      healthService: status,
+      pipedInstances: pipedStatus
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Proxy management endpoints
+exports.getProxyStats = async (req, res, next) => {
+  try {
+    const stats = getProxyYtdlStats();
+    return res.json(stats);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.refreshProxies = async (req, res, next) => {
+  try {
+    const { key } = req.query;
+
+    if (key !== process.env.CHANGE_COOKIE_KEY) {
+      throw create_return_error("Unauthorized", 401);
     }
 
-    return res.json({ updatedServers: audioServers });
+    console.log('🔄 Refreshing proxy list via API request...');
+    await refreshProxyList();
+    const stats = getProxyYtdlStats();
+
+    return res.json({
+      message: "Proxy list refreshed successfully",
+      ...stats
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.testProxyExtraction = async (req, res, next) => {
+  try {
+    const { videoId } = req.query;
+    const testVideoId = videoId || 'dQw4w9WgXcQ'; // Default test video
+
+    console.log(`🧪 Testing proxy extraction for video: ${testVideoId}`);
+    const result = await testProxyExtraction(testVideoId);
+
+    return res.json({
+      testVideoId,
+      ...result,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getProxyServiceStatus = async (req, res, next) => {
+  try {
+    const proxyExtractor = getProxyYtdlExtractor();
+    const stats = proxyExtractor.getStats();
+    const proxyService = proxyExtractor.proxyService;
+
+    const status = {
+      extractor: {
+        isInitialized: stats.isInitialized,
+        successfulExtractions: stats.successfulExtractions,
+        failedExtractions: stats.failedExtractions,
+        successRate: stats.successRate,
+        failedProxiesCount: stats.failedProxiesCount,
+        currentProxy: stats.currentProxy
+      },
+      proxyService: {
+        totalProxies: Object.values(proxyService.workingProxies).reduce((sum, arr) => sum + arr.length, 0),
+        proxiesByProtocol: {
+          http: proxyService.workingProxies.http.length,
+          https: proxyService.workingProxies.https.length,
+          socks4: proxyService.workingProxies.socks4.length,
+          socks5: proxyService.workingProxies.socks5.length
+        },
+        lastUpdate: proxyService.lastUpdate,
+        updateInterval: proxyService.updateInterval
+      }
+    };
+
+    return res.json(status);
   } catch (error) {
     next(error);
   }
