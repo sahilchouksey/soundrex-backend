@@ -1,9 +1,9 @@
 {
-  "lastUpdate": "2025-05-30T22:26:28.172Z",
+  "lastUpdate": "2025-05-30T23:11:37.457Z",
   "counts": {
-    "http": 0,
-    "https": 0,
-    "socks4": 0,
-    "socks5": 55
+    "http": 16725,
+    "https": 3756,
+    "socks4": 11485,
+    "socks5": 1697
   }
 }

@@ -78,6 +78,27 @@ const highestBitrate = (formats) => {
   });
 };
 
+// Helper function to extract container from mimeType
+const extractContainer = (mimeType) => {
+  if (!mimeType) return 'webm';
+
+  const match = mimeType.match(/audio\/([^;]+)/);
+  if (match) {
+    const container = match[1];
+    // Map common audio types to standard extensions
+    const containerMap = {
+      'mp4': 'mp4',
+      'webm': 'webm',
+      'ogg': 'ogg',
+      'opus': 'webm', // Opus is typically in WebM container
+      'mpeg': 'mp3'
+    };
+    return containerMap[container] || container;
+  }
+
+  return 'webm'; // Default fallback
+};
+
 const invidiousServer = "https://invidious.osi.kr"; // https://redirect.invidious.io/api/v1/videos/aqz-KE-bpKQ?fields=videoId,title,description&pretty=1
 
 //   `https://music.youtube.com/watch?v=${vid}&list=RDAMVM${vid}`;
@@ -304,9 +325,81 @@ exports.extractFromInvidious = async (id, dataType) => {
     console.log(`🎬 Trying Invidious instance: ${invidiousServer} (attempt ${attempts + 1}/3)`);
 
     try {
-      return {
-        url: `${invidiousServer}/api/v1/videos/${id}?fields=adaptiveFormats,title,description`,
+      const config = {
+        method: "get",
+        url: `${invidiousServer}/api/v1/videos/${id}?fields=adaptiveFormats,title,description,lengthSeconds`,
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+          "Accept": "application/json",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+        timeout: 10000
       };
+
+      const { data: info } = await axios(config);
+
+      if (!info || !info.adaptiveFormats || !Array.isArray(info.adaptiveFormats)) {
+        throw new Error("No video data found or invalid response format");
+      }
+
+      // Filter for audio-only formats
+      const audioFormats = info.adaptiveFormats.filter(format => {
+        // Check if it's audio-only (no video)
+        return format.type &&
+          format.type.toLowerCase().includes('audio') &&
+          !format.type.toLowerCase().includes('video') &&
+          format.url;
+      });
+
+      if (!audioFormats || audioFormats.length === 0) {
+        throw new Error("No audio-only formats found");
+      }
+
+      if (dataType === "audio") {
+        // Sort by bitrate (descending) and prefer certain codecs
+        const sortedFormats = audioFormats.sort((a, b) => {
+          const aBitrate = parseInt(a.bitrate) || 0;
+          const bBitrate = parseInt(b.bitrate) || 0;
+
+          if (aBitrate !== bBitrate) {
+            return bBitrate - aBitrate; // Higher bitrate first
+          }
+
+          // Prefer opus and webm over mp4/aac
+          const aCodec = a.type.toLowerCase();
+          const bCodec = b.type.toLowerCase();
+
+          if (aCodec.includes('opus') && !bCodec.includes('opus')) return -1;
+          if (!aCodec.includes('opus') && bCodec.includes('opus')) return 1;
+          if (aCodec.includes('webm') && !bCodec.includes('webm')) return -1;
+          if (!aCodec.includes('webm') && bCodec.includes('webm')) return 1;
+
+          return 0;
+        });
+
+        const selectedFormat = sortedFormats[0];
+
+        console.log(`✅ Invidious extracted audio: ${selectedFormat.type} at ${selectedFormat.bitrate}bps`);
+
+        return {
+          url: selectedFormat.url,
+          mimeType: selectedFormat.type,
+          bitrate: selectedFormat.bitrate,
+          contentLength: selectedFormat.contentLength,
+          container: extractContainer(selectedFormat.type),
+          quality: selectedFormat.bitrate ? `${selectedFormat.bitrate}kbps` : 'unknown',
+          source: 'invidious',
+          instance: invidiousServer,
+          videoDetails: {
+            title: info.title,
+            duration: info.lengthSeconds,
+            description: info.description
+          }
+        };
+      }
+
+      return info;
+
     } catch (error) {
       console.error(`❌ Invidious instance ${invidiousServer} failed:`, error.message);
       lastError = error;

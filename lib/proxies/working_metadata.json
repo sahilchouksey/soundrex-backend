@@ -1,8 +1,8 @@
 {
-  "lastTested": "2025-05-30T22:35:48.790Z",
+  "lastTested": "2025-05-30T23:14:09.192Z",
   "workingCounts": {
     "http": 0,
-    "https": 0,
+    "https": 5,
     "socks4": 0,
     "socks5": 0
   },
