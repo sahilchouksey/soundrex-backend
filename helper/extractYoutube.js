@@ -232,17 +232,15 @@ exports.extractFromPipeDaAPI = async (id) => {
 
 exports.extractFromYtdlCore = async (id, dataType) => {
   try {
-    const proxyUrl = "http://122.200.19.103:80";
-    const agent = new HttpsProxyAgent(proxyUrl);
+    console.log(`🎵 Attempting ytdl-core extraction for video: ${id}`);
 
+    // Use different proxy or remove proxy altogether to avoid bot detection
     let info = await ytdl.getInfo(BASE_URL(id), {
-      requestOptions: agent,
+      // Remove proxy agent to avoid bot detection
       headers: {
-        "User-Agent":
-          " Mozilla/5.0 (X11; Linux x86_64; rv:96.0) Gecko/20100101 Firefox/96.0",
-        Accept:
-          " text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Accept-Language": " en-US,en;q=0.5",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
         Origin: "https://www.youtube.com",
         Referer: "https://www.youtube.com",
         "Sec-Fetch-Dest": "empty",
@@ -250,53 +248,74 @@ exports.extractFromYtdlCore = async (id, dataType) => {
         "Sec-Fetch-Site": "same-origin",
       },
     });
+
     let audioFormats = ytdl.filterFormats(info.formats, "audioonly");
 
     if (!info || !audioFormats || (audioFormats && audioFormats.length === 0))
-      throw new Error("No data found.");
+      throw new Error("No audio data found from ytdl-core.");
 
     if (dataType == "audio") {
       const format = highestBitrate(audioFormats);
-
+      console.log(`✅ ytdl-core extraction successful for ${id}`);
       return format;
     }
-    //  else if (dataType == "info") {
-    //   return info.videoDetails;
-    // }
+
+    return format;
   } catch (error) {
-    console.log(error);
+    console.error(`❌ ytdl-core extraction failed for ${id}:`, error.message);
+
+    // If it's a bot detection error, throw a specific error
+    if (error.message.includes("Sign in to confirm") || error.message.includes("bot")) {
+      throw new Error("YouTube bot detection - ytdl-core blocked");
+    }
+
     throw error;
   }
 };
 
+// Invidious instances for rotation
+const invidiousInstances = [
+  "https://invidious.io.lol",
+  "https://invidious.privacydev.net",
+  "https://invidious.protokolla.fi",
+  "https://invidious.slipfox.xyz",
+  "https://invidious.weblibre.org",
+  "https://invidious.namazso.eu",
+  "https://invidious.tiekoetter.com",
+  "https://invidious.nerdvpn.de",
+  "https://inv.riverside.rocks",
+  "https://invidious.flokinet.to"
+];
+
+let currentInvidiousIndex = 0;
+
+const getNextInvidiousInstance = () => {
+  const instance = invidiousInstances[currentInvidiousIndex];
+  currentInvidiousIndex = (currentInvidiousIndex + 1) % invidiousInstances.length;
+  return instance;
+};
+
 exports.extractFromInvidious = async (id, dataType) => {
-  const invidiousServer = "https://invidious.jing.rocks";
-  try {
-    //    const { data: info } = await axios.get(
-    //      `${invidiousServer}/api/v1/videos/${id}?fields=adaptiveFormats,title,description`,
-    //    );
-    //    let audioFormats = filterFormats(info.adaptiveFormats, "audioonly");
-    //    if (!audioFormats || audioFormats.length === 0) {
-    //      throw new Error("No audio formats found.");
-    //    }
-    //    if (dataType === "audio") {
-    //      const format = highestBitrate(audioFormats);
-    //
-    //      return format;
-    //    } else if (dataType === "info") {
-    //      return {
-    //        title: info.title,
-    //        description: info.description,
-    //        formats: audioFormats,
-    //      };
-    //    }
-    return {
-      url: `${invidiousServer}/api/v1/videos/${id}?fields=adaptiveFormats,title,description`,
-    };
-  } catch (error) {
-    console.error("Error in extractFromInvidious:", error);
-    throw error;
+  let lastError;
+
+  // Try up to 3 different Invidious instances
+  for (let attempts = 0; attempts < 3; attempts++) {
+    const invidiousServer = getNextInvidiousInstance();
+    console.log(`🎬 Trying Invidious instance: ${invidiousServer} (attempt ${attempts + 1}/3)`);
+
+    try {
+      return {
+        url: `${invidiousServer}/api/v1/videos/${id}?fields=adaptiveFormats,title,description`,
+      };
+    } catch (error) {
+      console.error(`❌ Invidious instance ${invidiousServer} failed:`, error.message);
+      lastError = error;
+      continue;
+    }
   }
+
+  console.error("❌ All Invidious instances failed");
+  throw lastError || new Error("All Invidious instances failed");
 };
 
 // https://beatbump.ml/api/player.json?videoId=Ei8UnOPJX7w
@@ -408,6 +427,7 @@ exports.extractFromProxyYtdl = async (id, dataType) => {
     const startTime = Date.now();
 
     if (!proxyYtdlExtractor.isInitialized) {
+      console.log('🔧 Initializing proxy extractor...');
       await proxyYtdlExtractor.initialize();
     }
 
@@ -424,7 +444,7 @@ exports.extractFromProxyYtdl = async (id, dataType) => {
         contentLength: result.contentLength,
         container: result.container,
         quality: result.quality,
-        source: result.source,
+        source: 'proxy-ytdl',
         proxy: result.proxy,
         videoDetails: result.videoDetails
       };
@@ -433,7 +453,8 @@ exports.extractFromProxyYtdl = async (id, dataType) => {
     return result;
   } catch (error) {
     console.error(`❌ Proxy YTDL extraction failed for ${id}:`, error.message);
-    throw error;
+    // Don't re-throw immediately, let the main audio controller try other methods
+    throw new Error(`Proxy YTDL failed: ${error.message}`);
   }
 };
 
